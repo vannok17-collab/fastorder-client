@@ -7,8 +7,8 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-        <p className="ml-4 text-gray-600">Chargement du menu...</p>
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-500 border-t-transparent"></div>
+        <p className="ml-4 text-gray-600 text-lg">Chargement du menu...</p>
       </div>
     )
   }
@@ -40,7 +40,6 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
   const handleAddToCart = (plat) => {
     const quantity = quantities[plat.id] || 1
     onAddToCart(plat, quantity)
-    // Réinitialiser la quantité après ajout
     setQuantities(prev => ({
       ...prev,
       [plat.id]: 1
@@ -48,79 +47,93 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       {Object.entries(categories).map(([categorie, platsCategorie]) => (
-        <div key={categorie}>
-          {/* Titre de catégorie */}
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-orange-500">
-            {categorie}
-          </h2>
+        <div key={categorie} className="animate-fade-in">
+          {/* Titre de catégorie amélioré */}
+          <div className="flex items-center mb-6">
+            <div className="flex-1 h-1 bg-gradient-to-r from-orange-500 to-transparent"></div>
+            <h2 className="text-3xl font-bold text-gray-800 mx-4 px-6 py-2 bg-orange-50 rounded-full">
+              {categorie}
+            </h2>
+            <div className="flex-1 h-1 bg-gradient-to-l from-orange-500 to-transparent"></div>
+          </div>
 
-          {/* Grille de plats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Grille de plats améliorée */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {platsCategorie.map(plat => (
               <div
                 key={plat.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
+                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
               >
-                {/* Image */}
-                {plat.image_url && (
-                  <div className="h-48 bg-gray-200 overflow-hidden">
+                {/* Image avec overlay au survol */}
+                <div className="relative h-52 bg-gradient-to-br from-orange-100 to-orange-50 overflow-hidden group">
+                  {plat.image_url ? (
                     <img
                       src={plat.image_url}
                       alt={plat.nom}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/400x300?text=Image+Non+Disponible'
+                        e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop'
                       }}
                     />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-6xl">🍽️</span>
+                    </div>
+                  )}
+                  
+                  {/* Badge "Disponible" */}
+                  <div className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                    Disponible
                   </div>
-                )}
+                </div>
 
                 {/* Contenu */}
-                <div className="p-4">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                <div className="p-5">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-1">
                     {plat.nom}
                   </h3>
 
                   {plat.description && (
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 h-10">
                       {plat.description}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between mt-4">
-                    {/* Prix */}
-                    <span className="text-2xl font-bold text-orange-500">
-                      {plat.prix.toLocaleString()} FCFA
+                  {/* Prix stylisé */}
+                  <div className="mb-4">
+                    <span className="inline-block text-2xl font-bold text-orange-600 bg-orange-50 px-4 py-2 rounded-xl">
+                      {plat.prix.toLocaleString()} 
+                      <span className="text-sm ml-1">FCFA</span>
                     </span>
                   </div>
 
-                  {/* Sélecteur de quantité */}
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                  {/* Sélecteur de quantité amélioré */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center bg-gray-100 rounded-xl p-1 shadow-inner">
                       <button
                         onClick={() => handleQuantityChange(plat.id, -1)}
-                        className="p-1 hover:bg-gray-200 rounded transition"
+                        className="p-2 hover:bg-white rounded-lg transition disabled:opacity-50"
                         disabled={(quantities[plat.id] || 1) <= 1}
                       >
-                        <Minus size={20} className="text-gray-600" />
+                        <Minus size={18} className="text-gray-700" />
                       </button>
-                      <span className="px-4 font-semibold text-gray-800">
+                      <span className="px-4 font-bold text-gray-800 min-w-[40px] text-center">
                         {quantities[plat.id] || 1}
                       </span>
                       <button
                         onClick={() => handleQuantityChange(plat.id, 1)}
-                        className="p-1 hover:bg-gray-200 rounded transition"
+                        className="p-2 hover:bg-white rounded-lg transition"
                       >
-                        <Plus size={20} className="text-gray-600" />
+                        <Plus size={18} className="text-gray-700" />
                       </button>
                     </div>
 
-                    {/* Bouton Ajouter */}
+                    {/* Bouton Ajouter amélioré */}
                     <button
                       onClick={() => handleAddToCart(plat)}
-                      className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition font-medium flex items-center space-x-2"
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                     >
                       <Plus size={20} />
                       <span>Ajouter</span>

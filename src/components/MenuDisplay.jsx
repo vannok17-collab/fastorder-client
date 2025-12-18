@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, Minus } from 'lucide-react'
+import { APP_CONFIG } from '../config'
 
 function MenuDisplay({ plats, loading, onAddToCart }) {
   const [quantities, setQuantities] = useState({})
@@ -103,9 +104,14 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
 
                   {/* Prix stylisé */}
                   <div className="mb-4">
-                    <span className="inline-block text-2xl font-bold text-orange-600 bg-orange-50 px-4 py-2 rounded-xl">
-                      {plat.prix.toLocaleString()} 
-                      <span className="text-sm ml-1">FCFA</span>
+                    <span className="inline-block text-2xl font-bold px-4 py-2 rounded-xl"
+                      style={{ 
+                      color: APP_CONFIG.theme.primary,
+                      backgroundColor: `${APP_CONFIG.theme.primary}15`
+                      }}
+                    >
+                    {plat.prix.toLocaleString()} 
+                    <span className="text-sm ml-1">{APP_CONFIG.options.deviseMonnaie}</span>
                     </span>
                   </div>
 
@@ -133,7 +139,10 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
                     {/* Bouton Ajouter amélioré */}
                     <button
                       onClick={() => handleAddToCart(plat)}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                      className="flex-1 text-white px-4 py-3 rounded-xl transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                      style={{ 
+                    background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}, ${APP_CONFIG.theme.secondary})`
+                    }}
                     >
                       <Plus size={20} />
                       <span>Ajouter</span>

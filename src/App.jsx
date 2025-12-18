@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react'
+import { APP_CONFIG } from './config' 
 import { supabase } from './supabaseClient'
 import { ShoppingCart } from 'lucide-react'
 import MenuDisplay from './components/MenuDisplay'
@@ -206,19 +207,35 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">FastOrder</h1>
+    {/* Header */}
+    <header className="bg-white shadow-sm sticky top-0 z-40">
+    <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center"/>
+      <div className="flex items-center gap-3">
+        {/* Logo */}
+        {APP_CONFIG.restaurant.logo && (
+          <img 
+            src={APP_CONFIG.restaurant.logo} 
+            alt={APP_CONFIG.restaurant.nom}
+            className="w-10 h-10 rounded-full object-cover shadow-md"
+          />
+      )}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {APP_CONFIG.restaurant.nom}
+        </h1>
             {numeroTable && (
               <p className="text-sm text-gray-600">Table {numeroTable}</p>
             )}
           </div>
-          <button
-            onClick={() => setShowCart(true)}
-            className="relative p-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition"
-          >
+            <button
+              onClick={() => setShowCart(true)}
+              className="relative p-2 text-white rounded-full transition shadow-lg hover:shadow-xl"
+              style={{   
+             backgroundColor: APP_CONFIG.theme.primary,
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = APP_CONFIG.theme.secondary}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = APP_CONFIG.theme.primary}
+            >
             <ShoppingCart size={24} />
             {cartCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">

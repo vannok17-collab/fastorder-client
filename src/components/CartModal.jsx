@@ -1,4 +1,5 @@
 import { X, Trash2, ShoppingBag } from 'lucide-react'
+import { APP_CONFIG } from '../config'
 
 function CartModal({ show, panier, onClose, onRemove, onOrder }) {
   if (!show) return null
@@ -25,7 +26,7 @@ function CartModal({ show, panier, onClose, onRemove, onOrder }) {
       {/* Modal avec animation de slide */}
       <div className="fixed right-0 top-0 h-full w-full max-w-md bg-gradient-to-b from-white to-gray-50 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col animate-slide-in">
         {/* Header avec dégradé */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 flex justify-between items-center shadow-lg">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 flex justify-between items-center shadow-lg">
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-3">
               <ShoppingBag size={28} />
@@ -108,15 +109,21 @@ function CartModal({ show, panier, onClose, onRemove, onOrder }) {
         {panier.length > 0 && (
           <div className="border-t border-gray-200 bg-white p-6 space-y-4 shadow-lg">
             {/* Total stylisé */}
-            <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-xl">
+            <div className="p-4 rounded-xl"
+              style={{ 
+              background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}15, ${APP_CONFIG.theme.primary}25)`
+              }}
+            >
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 font-semibold text-lg">Total</span>
-                <span className="text-3xl font-bold text-orange-600">
-                  {montantTotal.toLocaleString()} <span className="text-xl">FCFA</span>
+                <span className="text-3xl font-bold"
+                style={{ color: APP_CONFIG.theme.primary }}
+              >
+                {montantTotal.toLocaleString()} <span className="text-xl">{APP_CONFIG.options.deviseMonnaie}</span>
                 </span>
               </div>
             </div>
-
+            
             {/* Bouton Commander amélioré */}
             <button
               onClick={onOrder}

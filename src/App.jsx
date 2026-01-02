@@ -16,9 +16,7 @@ function App() {
   const [userId, setUserId] = useState('')
   const [numeroTable, setNumeroTable] = useState(null)
 
-  // Générer ou récupérer l'UUID utilisateur
   useEffect(() => {
-    // Récupérer les paramètres URL
     const params = new URLSearchParams(window.location.search)
     const tableParam = params.get('table')
     const userParam = params.get('uuid')
@@ -27,7 +25,6 @@ function App() {
       setNumeroTable(parseInt(tableParam))
     }
 
-    // Générer ou récupérer UUID
     let id = userParam || localStorage.getItem('fastorder_user_id')
     if (!id) {
       id = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
@@ -36,12 +33,10 @@ function App() {
     setUserId(id)
   }, [])
 
-  // Charger le menu
   useEffect(() => {
     fetchMenu()
   }, [])
 
-  // Charger le panier
   useEffect(() => {
     if (userId) {
       fetchPanier()
@@ -86,7 +81,6 @@ function App() {
 
   const addToCart = async (plat, quantite = 1) => {
     try {
-      // Vérifier si le plat est déjà dans le panier
       const { data: existing } = await supabase
         .from('panier_items')
         .select('*')
@@ -95,7 +89,6 @@ function App() {
         .single()
 
       if (existing) {
-        // Mettre à jour la quantité
         const { error } = await supabase
           .from('panier_items')
           .update({ quantite: existing.quantite + quantite })
@@ -103,7 +96,6 @@ function App() {
 
         if (error) throw error
       } else {
-        // Ajouter au panier
         const { error } = await supabase
           .from('panier_items')
           .insert({
@@ -116,7 +108,7 @@ function App() {
       }
 
       await fetchPanier()
-      showMessage(`${plat.nom} ajouté au panier !`, 'success')
+      showMessage(`${plat.nom} ajouté au panier`, 'success')
     } catch (error) {
       console.error('Erreur ajout panier:', error)
       showMessage('Erreur lors de l\'ajout au panier', 'error')
@@ -148,12 +140,10 @@ function App() {
     }
 
     try {
-      // Calculer le montant total
       const montantTotal = panier.reduce((sum, item) => 
         sum + (item.plats.prix * item.quantite), 0
       )
 
-      // Créer la commande
       const { data: commande, error: commandeError } = await supabase
         .from('commandes')
         .insert({
@@ -167,7 +157,6 @@ function App() {
 
       if (commandeError) throw commandeError
 
-      // Ajouter les items de la commande
       const commandeItems = panier.map(item => ({
         commande_id: commande.id,
         plat_id: item.plat_id,
@@ -181,7 +170,6 @@ function App() {
 
       if (itemsError) throw itemsError
 
-      // Vider le panier
       const { error: deleteError } = await supabase
         .from('panier_items')
         .delete()
@@ -191,7 +179,7 @@ function App() {
 
       await fetchPanier()
       setShowCart(false)
-      showMessage('Commande passée avec succès ! Table ' + numeroTable, 'success')
+      showMessage(`Commande passée avec succès - Table ${numeroTable}`, 'success')
     } catch (error) {
       console.error('Erreur commande:', error)
       showMessage('Erreur lors de la commande', 'error')
@@ -207,38 +195,40 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-    {/* Header */}
-    <header className="bg-white shadow-sm sticky top-0 z-40">
-    <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center"/>
-      <div className="flex items-center gap-3">
-        {/* Logo */}
-        {APP_CONFIG.restaurant.logo && (
-          <img 
-            src={APP_CONFIG.restaurant.logo} 
-            alt={APP_CONFIG.restaurant.nom}
-            className="w-10 h-10 rounded-full object-cover shadow-md"
-          />
-      )}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {APP_CONFIG.restaurant.nom}
-        </h1>
-            {numeroTable && (
-              <p className="text-sm text-gray-600">Table {numeroTable}</p>
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4">
+          <div className="flex items-center gap-3 flex-1">
+            {/* Logo */}
+            {APP_CONFIG.restaurant.logo && (
+              <img 
+                src={APP_CONFIG.restaurant.logo} 
+                alt={APP_CONFIG.restaurant.nom}
+                className="w-10 h-10 rounded-full object-cover shadow-md"
+              />
             )}
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {APP_CONFIG.restaurant.nom}
+              </h1>
+              {numeroTable && (
+                <p className="text-sm text-gray-600">Table {numeroTable}</p>
+              )}
+            </div>
           </div>
-            <button
-              onClick={() => setShowCart(true)}
-              className="relative p-2 text-white rounded-full transition shadow-lg hover:shadow-xl"
-              style={{   
-             backgroundColor: APP_CONFIG.theme.primary,
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = APP_CONFIG.theme.secondary}
+          
+          <button
+            onClick={() => setShowCart(true)}
+            className="relative p-2 text-white rounded-full transition shadow-lg hover:shadow-xl"
+            style={{ backgroundColor: APP_CONFIG.theme.primary }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = APP_CONFIG.theme.primaryHover}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = APP_CONFIG.theme.primary}
-            >
+          >
             <ShoppingCart size={24} />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center"
+                style={{ backgroundColor: APP_CONFIG.theme.danger }}
+              >
                 {cartCount}
               </span>
             )}
@@ -248,9 +238,13 @@ function App() {
 
       {/* Message de notification */}
       {message && (
-        <div className={`fixed top-20 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
-          message.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        } text-white animate-fade-in`}>
+        <div className={`fixed top-20 right-4 left-4 md:left-auto md:right-4 z-50 px-6 py-4 rounded-xl shadow-2xl animate-fade-in text-white font-semibold text-center md:text-left max-w-md`}
+          style={{
+            backgroundColor: message.type === 'success' ? APP_CONFIG.theme.success : APP_CONFIG.theme.danger,
+            borderWidth: '2px',
+            borderColor: message.type === 'success' ? APP_CONFIG.theme.successHover : APP_CONFIG.theme.dangerHover
+          }}
+        >
           {message.text}
         </div>
       )}

@@ -8,7 +8,9 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-500 border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-transparent"
+          style={{ borderColor: `${APP_CONFIG.theme.primary}40`, borderTopColor: 'transparent' }}
+        ></div>
         <p className="ml-4 text-gray-600 text-lg">Chargement du menu...</p>
       </div>
     )
@@ -22,7 +24,6 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
     )
   }
 
-  // Grouper par catégorie
   const categories = plats.reduce((acc, plat) => {
     if (!acc[plat.categorie]) {
       acc[plat.categorie] = []
@@ -51,24 +52,32 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
     <div className="space-y-12">
       {Object.entries(categories).map(([categorie, platsCategorie]) => (
         <div key={categorie} className="animate-fade-in">
-          {/* Titre de catégorie amélioré */}
+          {/* Titre de catégorie */}
           <div className="flex items-center mb-6">
-            <div className="flex-1 h-1 bg-gradient-to-r from-orange-500 to-transparent"></div>
-            <h2 className="text-3xl font-bold text-gray-800 mx-4 px-6 py-2 bg-orange-50 rounded-full">
+            <div className="flex-1 h-1"
+              style={{ background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}, transparent)` }}
+            ></div>
+            <h2 className="text-3xl font-bold text-gray-800 mx-4 px-6 py-2 rounded-full"
+              style={{ backgroundColor: `${APP_CONFIG.theme.primary}15` }}
+            >
               {categorie}
             </h2>
-            <div className="flex-1 h-1 bg-gradient-to-l from-orange-500 to-transparent"></div>
+            <div className="flex-1 h-1"
+              style={{ background: `linear-gradient(to left, ${APP_CONFIG.theme.primary}, transparent)` }}
+            ></div>
           </div>
 
-          {/* Grille de plats améliorée */}
+          {/* Grille de plats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {platsCategorie.map(plat => (
               <div
                 key={plat.id}
                 className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
               >
-                {/* Image avec overlay au survol */}
-                <div className="relative h-52 bg-gradient-to-br from-orange-100 to-orange-50 overflow-hidden group">
+                {/* Image */}
+                <div className="relative h-52 overflow-hidden group"
+                  style={{ background: `linear-gradient(to bottom right, ${APP_CONFIG.theme.primaryBg}, ${APP_CONFIG.theme.primary}20)` }}
+                >
                   {plat.image_url ? (
                     <img
                       src={plat.image_url}
@@ -80,42 +89,58 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-6xl">🍽️</span>
+                      <span className="text-6xl text-gray-300">🍽️</span>
                     </div>
                   )}
                   
                   {/* Badge "Disponible" */}
-                  <div className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                  <div className="absolute top-3 right-3 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
+                    style={{ backgroundColor: APP_CONFIG.theme.success }}
+                  >
                     Disponible
                   </div>
                 </div>
 
                 {/* Contenu */}
                 <div className="p-5">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-1">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2"
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
                     {plat.nom}
                   </h3>
 
                   {plat.description && (
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 h-10">
+                    <p className="text-gray-600 text-sm mb-4 h-10"
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
+                      }}
+                    >
                       {plat.description}
                     </p>
                   )}
 
-                  {/* Prix stylisé */}
+                  {/* Prix */}
                   <div className="mb-4">
                     <span className="inline-block text-2xl font-bold px-4 py-2 rounded-xl"
                       style={{ 
-                      color: APP_CONFIG.theme.primary,
-                      backgroundColor: `${APP_CONFIG.theme.primary}15`
+                        color: APP_CONFIG.theme.primary,
+                        backgroundColor: `${APP_CONFIG.theme.primary}15`
                       }}
                     >
-                    {plat.prix.toLocaleString()} 
-                    <span className="text-sm ml-1">{APP_CONFIG.options.deviseMonnaie}</span>
+                      {plat.prix.toLocaleString()} 
+                      <span className="text-sm ml-1">{APP_CONFIG.options.deviseMonnaie}</span>
                     </span>
                   </div>
 
-                  {/* Sélecteur de quantité amélioré */}
+                  {/* Sélecteur de quantité */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center bg-gray-100 rounded-xl p-1 shadow-inner">
                       <button
@@ -136,13 +161,13 @@ function MenuDisplay({ plats, loading, onAddToCart }) {
                       </button>
                     </div>
 
-                    {/* Bouton Ajouter amélioré */}
+                    {/* Bouton Ajouter */}
                     <button
                       onClick={() => handleAddToCart(plat)}
                       className="flex-1 text-white px-4 py-3 rounded-xl transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                       style={{ 
-                    background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}, ${APP_CONFIG.theme.secondary})`
-                    }}
+                        background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}, ${APP_CONFIG.theme.primaryHover})`
+                      }}
                     >
                       <Plus size={20} />
                       <span>Ajouter</span>

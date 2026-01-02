@@ -17,28 +17,30 @@ function CartModal({ show, panier, onClose, onRemove, onOrder }) {
 
   return (
     <>
-      {/* Overlay avec animation */}
+      {/* Overlay */}
       <div
         className="fixed inset-0 bg-black bg-opacity-60 z-40 transition-opacity backdrop-blur-sm"
         onClick={onClose}
       ></div>
 
-      {/* Modal avec animation de slide */}
+      {/* Modal */}
       <div className="fixed right-0 top-0 h-full w-full max-w-md bg-gradient-to-b from-white to-gray-50 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col animate-slide-in">
-        {/* Header avec dégradé */}
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 flex justify-between items-center shadow-lg">
+        {/* Header */}
+        <div className="text-white p-6 flex justify-between items-center shadow-lg"
+          style={{ background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}, ${APP_CONFIG.theme.primaryHover})` }}
+        >
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-3">
               <ShoppingBag size={28} />
               <span>Mon Panier</span>
             </h2>
-            <p className="text-orange-100 text-sm mt-1">
+            <p className="text-sm mt-1 opacity-90">
               {panier.length} article{panier.length > 1 ? 's' : ''}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-orange-600 rounded-full transition-all hover:rotate-90 duration-300"
+            className="p-2 hover:bg-white/20 rounded-full transition-all hover:rotate-90 duration-300"
           >
             <X size={28} />
           </button>
@@ -80,22 +82,35 @@ function CartModal({ show, panier, onClose, onRemove, onOrder }) {
                     </h3>
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                       <span className="bg-gray-100 px-2 py-1 rounded-lg">
-                        {item.plats.prix.toLocaleString()} FCFA
+                        {item.plats.prix.toLocaleString()} {APP_CONFIG.options.deviseMonnaie}
                       </span>
                       <span>×</span>
-                      <span className="bg-orange-100 text-orange-700 font-semibold px-2 py-1 rounded-lg">
+                      <span className="font-semibold px-2 py-1 rounded-lg"
+                        style={{ 
+                          backgroundColor: `${APP_CONFIG.theme.primary}20`,
+                          color: APP_CONFIG.theme.primary
+                        }}
+                      >
                         {item.quantite}
                       </span>
                     </div>
-                    <p className="text-orange-600 font-bold text-lg">
-                      {(item.plats.prix * item.quantite).toLocaleString()} FCFA
+                    <p className="font-bold text-lg"
+                      style={{ color: APP_CONFIG.theme.primary }}
+                    >
+                      {(item.plats.prix * item.quantite).toLocaleString()} {APP_CONFIG.options.deviseMonnaie}
                     </p>
                   </div>
 
                   {/* Bouton Supprimer */}
                   <button
                     onClick={() => handleRemove(item.id, item.plats.nom)}
-                    className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all hover:scale-110"
+                    className="p-3 rounded-xl transition-all hover:scale-110"
+                    style={{ 
+                      color: APP_CONFIG.theme.danger,
+                      backgroundColor: `${APP_CONFIG.theme.danger}10`
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${APP_CONFIG.theme.danger}20`}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${APP_CONFIG.theme.danger}10`}
                   >
                     <Trash2 size={22} />
                   </button>
@@ -105,31 +120,32 @@ function CartModal({ show, panier, onClose, onRemove, onOrder }) {
           )}
         </div>
 
-        {/* Footer avec total et bouton commander */}
+        {/* Footer */}
         {panier.length > 0 && (
           <div className="border-t border-gray-200 bg-white p-6 space-y-4 shadow-lg">
-            {/* Total stylisé */}
+            {/* Total */}
             <div className="p-4 rounded-xl"
               style={{ 
-              background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}15, ${APP_CONFIG.theme.primary}25)`
+                background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}15, ${APP_CONFIG.theme.primary}25)`
               }}
             >
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 font-semibold text-lg">Total</span>
                 <span className="text-3xl font-bold"
-                style={{ color: APP_CONFIG.theme.primary }}
-              >
-                {montantTotal.toLocaleString()} <span className="text-xl">{APP_CONFIG.options.deviseMonnaie}</span>
+                  style={{ color: APP_CONFIG.theme.primary }}
+                >
+                  {montantTotal.toLocaleString()} <span className="text-xl">{APP_CONFIG.options.deviseMonnaie}</span>
                 </span>
               </div>
             </div>
             
-            {/* Bouton Commander amélioré */}
+            {/* Bouton Commander */}
             <button
               onClick={onOrder}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition-all font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95"
+              className="w-full text-white py-4 rounded-xl transition-all font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95"
+              style={{ background: `linear-gradient(to right, ${APP_CONFIG.theme.success}, ${APP_CONFIG.theme.successHover})` }}
             >
-              🎉 Commander Maintenant
+              Commander Maintenant
             </button>
           </div>
         )}

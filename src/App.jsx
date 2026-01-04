@@ -1,10 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+// fastorder-client/src/App.jsx
 import { useState, useEffect } from 'react'
-import { APP_CONFIG } from './config' 
+import { APP_CONFIG, initializeThemeFromLogo } from './config' 
 import { supabase } from './supabaseClient'
 import { ShoppingCart } from 'lucide-react'
 import MenuDisplay from './components/MenuDisplay'
 import CartModal from './components/CartModal'
+import OrderTracker from './components/OrderTracker'
 import './App.css'
 
 function App() {
@@ -15,6 +17,16 @@ function App() {
   const [message, setMessage] = useState(null)
   const [userId, setUserId] = useState('')
   const [numeroTable, setNumeroTable] = useState(null)
+  const [themeReady, setThemeReady] = useState(false)
+
+  // Initialiser le thème depuis le logo
+  useEffect(() => {
+    const loadTheme = async () => {
+      await initializeThemeFromLogo()
+      setThemeReady(true)
+    }
+    loadTheme()
+  }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -34,14 +46,16 @@ function App() {
   }, [])
 
   useEffect(() => {
-    fetchMenu()
-  }, [])
+    if (themeReady) {
+      fetchMenu()
+    }
+  }, [themeReady])
 
   useEffect(() => {
-    if (userId) {
+    if (userId && themeReady) {
       fetchPanier()
     }
-  }, [userId])
+  }, [userId, themeReady])
 
   const fetchMenu = async () => {
     try {
@@ -193,13 +207,24 @@ function App() {
 
   const cartCount = panier.reduce((sum, item) => sum + item.quantite, 0)
 
+  // Écran de chargement du thème
+  if (!themeReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-300 border-t-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-semibold">Chargement du thème...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4">
           <div className="flex items-center gap-3 flex-1">
-            {/* Logo */}
             {APP_CONFIG.restaurant.logo && (
               <img 
                 src={APP_CONFIG.restaurant.logo} 
@@ -236,7 +261,7 @@ function App() {
         </div>
       </header>
 
-      {/* Message de notification */}
+      {/* Notifications */}
       {message && (
         <div className={`fixed top-20 right-4 left-4 md:left-auto md:right-4 z-50 px-6 py-4 rounded-xl shadow-2xl animate-fade-in text-white font-semibold text-center md:text-left max-w-md`}
           style={{
@@ -250,7 +275,7 @@ function App() {
       )}
 
       {/* Menu */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
         <MenuDisplay 
           plats={plats} 
           loading={loading} 
@@ -266,6 +291,9 @@ function App() {
         onRemove={removeFromCart}
         onOrder={passerCommande}
       />
+
+      {/* Tracker de commande en temps réel */}
+      <OrderTracker userId={userId} />
     </div>
   )
 }

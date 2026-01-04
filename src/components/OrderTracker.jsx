@@ -1,0 +1,154 @@
+// fastorder-client/src/components/OrderTracker.jsx
+import { useState, useEffect } from 'react'
+import { supabase } from '../supabaseClient'
+import { APP_CONFIG } from '../config'
+import { Clock, Package, CheckCircle } from 'lucide-react'
+
+function OrderTracker({ userId }) {
+  const [derniereCommande, setDerniereCommande] = useState(null)
+  const [showNotif, setShowNotif] = useState(false)
+
+  useEffect(() => {
+    if (!userId) return
+
+    // Charger la dernière commande
+    fetchDerniereCommande()
+
+    // S'abonner aux changements en temps réel
+    const channel = supabase
+      .channel('commandes_realtime')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'commandes',
+        filter: `user_id=eq.${userId}`
+      }, (payload) => {
+        console.log('🔔 Commande mise à jour:', payload.new)
+        setDerniereCommande(payload.new)
+        setShowNotif(true)
+        
+        // Masquer la notification après 5 secondes
+        setTimeout(() => setShowNotif(false), 5000)
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [userId])
+
+  const fetchDerniereCommande = async () => {
+    try {
+      const { data } = await supabase
+        .from('commandes')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (data) {
+        setDerniereCommande(data)
+      }
+    } catch (error) {
+      // Pas de commande encore
+      console.log('Aucune commande trouvée')
+    }
+  }
+
+  if (!derniereCommande || derniereCommande.statut === 'Terminée') return null
+
+  const getStatutInfo = (statut) => {
+    switch (statut) {
+      case 'En attente':
+        return {
+          icon: <Clock size={24} />,
+          color: APP_CONFIG.theme.warning,
+          bg: `${APP_CONFIG.theme.warning}20`,
+          text: 'Votre commande est en attente',
+          description: 'Nous préparons votre commande'
+        }
+      case 'En préparation':
+        return {
+          icon: <Package size={24} />,
+          color: APP_CONFIG.theme.info,
+          bg: `${APP_CONFIG.theme.info}20`,
+          text: 'Votre commande est en préparation',
+          description: 'Le chef est à l\'œuvre !'
+        }
+      case 'Terminée':
+        return {
+          icon: <CheckCircle size={24} />,
+          color: APP_CONFIG.theme.success,
+          bg: `${APP_CONFIG.theme.success}20`,
+          text: 'Votre commande est prête !',
+          description: 'Bon appétit !'
+        }
+      default:
+        return null
+    }
+  }
+
+  const statutInfo = getStatutInfo(derniereCommande.statut)
+  if (!statutInfo) return null
+
+  return (
+    <>
+      {/* Notification flottante (popup) */}
+      {showNotif && (
+        <div className="fixed top-24 left-4 right-4 md:left-auto md:right-4 z-50 max-w-md animate-fade-in"
+          style={{
+            backgroundColor: 'white',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}
+        >
+          <div className="p-4 rounded-lg border-l-4"
+            style={{ borderColor: statutInfo.color }}
+          >
+            <div className="flex items-start gap-3">
+              <div style={{ color: statutInfo.color }}>
+                {statutInfo.icon}
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-gray-800">{statutInfo.text}</p>
+                <p className="text-sm text-gray-600 mt-1">{statutInfo.description}</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Table {derniereCommande.numero_table} • {derniereCommande.montant_total.toLocaleString()} {APP_CONFIG.options.deviseMonnaie}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barre de statut fixe en bas */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 shadow-2xl"
+        style={{ backgroundColor: 'white', borderTop: `3px solid ${statutInfo.color}` }}
+      >
+        <div className="max-w-7xl mx-auto p-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0 p-2 rounded-full"
+              style={{ backgroundColor: statutInfo.bg, color: statutInfo.color }}
+            >
+              {statutInfo.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-800 truncate">{statutInfo.text}</p>
+              <p className="text-sm text-gray-600">{statutInfo.description}</p>
+            </div>
+            <div className="flex-shrink-0 text-right">
+              <p className="text-xs text-gray-500">Table {derniereCommande.numero_table}</p>
+              <p className="font-bold"
+                style={{ color: statutInfo.color }}
+              >
+                {derniereCommande.montant_total.toLocaleString()} {APP_CONFIG.options.deviseMonnaie}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+export default OrderTracker

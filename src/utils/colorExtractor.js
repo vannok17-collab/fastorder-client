@@ -1,166 +1,210 @@
-// ============================================
-// EXTRACTEUR DE COULEURS DEPUIS LE LOGO
-// ============================================
+// fastorder-client/src/utils/colorExtractor.js
+// fastorder-manager/src/utils/colorExtractor.js (même fichier pour les deux)
 
+/**
+ * Extrait les couleurs dominantes d'une image
+ * @param {string} imageUrl - URL de l'image
+ * @returns {Promise<Object>} - Objet contenant les couleurs du thème
+ */
 export const extractColorsFromLogo = async (imageUrl) => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image()
     img.crossOrigin = 'Anonymous'
     
     img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      canvas.width = img.width
-      canvas.height = img.height
-      ctx.drawImage(img, 0, 0)
-      
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      const pixels = imageData.data
-      
-      // Compter les couleurs
-      const colorCounts = {}
-      for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i]
-        const g = pixels[i + 1]
-        const b = pixels[i + 2]
-        const a = pixels[i + 3]
+      try {
+        // Créer un canvas pour analyser l'image
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
         
-        // Ignorer les pixels transparents et trop clairs/foncés
-        if (a < 100 || (r > 240 && g > 240 && b > 240) || (r < 15 && g < 15 && b < 15)) {
-          continue
+        // Redimensionner pour optimiser la performance
+        const maxSize = 200
+        const scale = Math.min(maxSize / img.width, maxSize / img.height)
+        canvas.width = img.width * scale
+        canvas.height = img.height * scale
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        
+        // Obtenir les données de pixels
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const pixels = imageData.data
+        
+        // Extraire les couleurs
+        const colors = []
+        for (let i = 0; i < pixels.length; i += 4) {
+          const r = pixels[i]
+          const g = pixels[i + 1]
+          const b = pixels[i + 2]
+          const a = pixels[i + 3]
+          
+          // Ignorer les pixels transparents et trop clairs/foncés
+          if (a > 128 && !(r > 240 && g > 240 && b > 240) && !(r < 20 && g < 20 && b < 20)) {
+            colors.push({ r, g, b })
+          }
         }
         
-        // Arrondir pour grouper les couleurs similaires
-        const rr = Math.round(r / 10) * 10
-        const gg = Math.round(g / 10) * 10
-        const bb = Math.round(b / 10) * 10
-        const key = `${rr},${gg},${bb}`
+        // Trouver les couleurs dominantes par clustering
+        const dominantColors = findDominantColors(colors, 5)
         
-        colorCounts[key] = (colorCounts[key] || 0) + 1
-      }
-      
-      // Trier par fréquence
-      const sortedColors = Object.entries(colorCounts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([color]) => {
-          const [r, g, b] = color.split(',').map(Number)
-          return { r, g, b }
+        // Trier par saturation pour obtenir les couleurs les plus vives
+        const sortedColors = dominantColors.sort((a, b) => {
+          const satA = getSaturation(a.r, a.g, a.b)
+          const satB = getSaturation(b.r, b.g, b.b)
+          return satB - satA
         })
-      
-      if (sortedColors.length === 0) {
-        // Fallback si aucune couleur détectée
-        resolve(getDefaultColors())
-        return
-      }
-      
-      // Extraire les 3 couleurs principales
-      const primary = sortedColors[0]
-      const secondary = sortedColors[1] || primary
-      const accent = sortedColors[2] || secondary
-      
-      const colors = {
-        primary: rgbToHex(primary.r, primary.g, primary.b),
-        primaryHover: darken(rgbToHex(primary.r, primary.g, primary.b), 15),
-        primaryLight: lighten(rgbToHex(primary.r, primary.g, primary.b), 20),
-        primaryBg: lighten(rgbToHex(primary.r, primary.g, primary.b), 45),
         
-        secondary: rgbToHex(secondary.r, secondary.g, secondary.b),
-        accent: rgbToHex(accent.r, accent.g, accent.b),
+        // Identifier les couleurs principales
+        const primary = sortedColors[0] // Couleur la plus saturée
+        const secondary = sortedColors[1] || primary
+        const accent = sortedColors[2] || primary
         
-        success: "#10b981",
-        successHover: "#059669",
-        successLight: "#d1fae5",
-        
-        danger: "#ef4444",
-        dangerHover: "#dc2626",
-        dangerLight: "#fee2e2",
-        
-        warning: "#f59e0b",
-        warningLight: "#fef3c7",
-        
-        info: "#3b82f6",
-        infoLight: "#dbeafe",
-        
-        text: {
-          primary: "#111827",
-          secondary: "#6b7280",
-          light: "#9ca3af",
-        },
-        
-        background: {
-          primary: "#ffffff",
-          secondary: "#f9fafb",
-          dark: "#1f2937",
+        // Créer le thème complet
+        const theme = {
+          primary: rgbToHex(primary.r, primary.g, primary.b),
+          primaryHover: darkenColor(primary.r, primary.g, primary.b, 0.15),
+          primaryLight: lightenColor(primary.r, primary.g, primary.b, 0.2),
+          primaryBg: lightenColor(primary.r, primary.g, primary.b, 0.9),
+          
+          secondary: rgbToHex(secondary.r, secondary.g, secondary.b),
+          accent: rgbToHex(accent.r, accent.g, accent.b),
+          
+          success: "#10b981",
+          successHover: "#059669",
+          warning: "#f59e0b",
+          info: "#3b82f6",
+          danger: "#ef4444",
+          dangerHover: "#dc2626",
+          
+          text: {
+            primary: "#111827",
+            secondary: "#6b7280",
+            light: "#ffffff"
+          },
+          
+          background: {
+            primary: "#ffffff",
+            secondary: "#f9fafb",
+          }
         }
+        
+        resolve(theme)
+      } catch (error) {
+        reject(error)
       }
-      
-      resolve(colors)
     }
     
     img.onerror = () => {
-      console.warn('Erreur chargement logo, utilisation des couleurs par défaut')
-      resolve(getDefaultColors())
+      reject(new Error('Impossible de charger l\'image'))
     }
     
-    // Utiliser un proxy CORS pour charger l'image
-    img.src = imageUrl.includes('http') 
-      ? `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`
-      : imageUrl
+    // Ajouter timestamp pour éviter le cache
+    img.src = imageUrl + '?t=' + Date.now()
   })
 }
 
-// Convertir RGB en HEX
-const rgbToHex = (r, g, b) => {
-  return '#' + [r, g, b].map(x => {
-    const hex = x.toString(16)
-    return hex.length === 1 ? '0' + hex : hex
-  }).join('')
-}
-
-// Assombrir une couleur
-const darken = (hex, percent) => {
-  const num = parseInt(hex.replace('#', ''), 16)
-  const r = Math.max(0, (num >> 16) - Math.round(255 * (percent / 100)))
-  const g = Math.max(0, ((num >> 8) & 0x00FF) - Math.round(255 * (percent / 100)))
-  const b = Math.max(0, (num & 0x0000FF) - Math.round(255 * (percent / 100)))
-  return rgbToHex(r, g, b)
-}
-
-// Éclaircir une couleur
-const lighten = (hex, percent) => {
-  const num = parseInt(hex.replace('#', ''), 16)
-  const r = Math.min(255, (num >> 16) + Math.round(255 * (percent / 100)))
-  const g = Math.min(255, ((num >> 8) & 0x00FF) + Math.round(255 * (percent / 100)))
-  const b = Math.min(255, (num & 0x0000FF) + Math.round(255 * (percent / 100)))
-  return rgbToHex(r, g, b)
-}
-
-// Couleurs par défaut (fallback)
-const getDefaultColors = () => ({
-  primary: "#f97316",
-  primaryHover: "#ea580c",
-  primaryLight: "#fb923c",
-  primaryBg: "#fff7ed",
-  secondary: "#dc2626",
-  accent: "#fbbf24",
-  success: "#10b981",
-  successHover: "#059669",
-  successLight: "#d1fae5",
-  danger: "#ef4444",
-  dangerHover: "#dc2626",
-  dangerLight: "#fee2e2",
-  warning: "#f59e0b",
-  warningLight: "#fef3c7",
-  info: "#3b82f6",
-  infoLight: "#dbeafe",
-  text: {
-    primary: "#111827",
-    secondary: "#6b7280",
-    light: "#9ca3af",
-  },
-  background: {
-    primary: "#ffffff",
-    secondary: "#f9fafb",
-    dark: "#1f2937",
+/**
+ * Trouve les couleurs dominantes par clustering simple
+ */
+function findDominantColors(colors, numColors) {
+  if (colors.length === 0) {
+    return [{ r: 255, g: 128, b: 0 }] // Couleur par défaut orange
   }
-})
+  
+  // Initialiser les clusters avec des couleurs aléatoires
+  const clusters = []
+  const step = Math.floor(colors.length / numColors)
+  
+  for (let i = 0; i < numColors && i * step < colors.length; i++) {
+    clusters.push({ ...colors[i * step], count: 0 })
+  }
+  
+  // Assigner chaque couleur au cluster le plus proche
+  const clusterAssignments = new Array(clusters.length).fill(0).map(() => [])
+  
+  colors.forEach(color => {
+    let minDist = Infinity
+    let closestCluster = 0
+    
+    clusters.forEach((cluster, idx) => {
+      const dist = colorDistance(color, cluster)
+      if (dist < minDist) {
+        minDist = dist
+        closestCluster = idx
+      }
+    })
+    
+    clusterAssignments[closestCluster].push(color)
+  })
+  
+  // Calculer la moyenne de chaque cluster
+  return clusterAssignments
+    .filter(cluster => cluster.length > 0)
+    .map(cluster => {
+      const sum = cluster.reduce((acc, c) => ({
+        r: acc.r + c.r,
+        g: acc.g + c.g,
+        b: acc.b + c.b
+      }), { r: 0, g: 0, b: 0 })
+      
+      return {
+        r: Math.round(sum.r / cluster.length),
+        g: Math.round(sum.g / cluster.length),
+        b: Math.round(sum.b / cluster.length)
+      }
+    })
+}
+
+/**
+ * Calcule la distance entre deux couleurs
+ */
+function colorDistance(c1, c2) {
+  return Math.sqrt(
+    Math.pow(c1.r - c2.r, 2) +
+    Math.pow(c1.g - c2.g, 2) +
+    Math.pow(c1.b - c2.b, 2)
+  )
+}
+
+/**
+ * Calcule la saturation d'une couleur
+ */
+function getSaturation(r, g, b) {
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const delta = max - min
+  
+  if (max === 0) return 0
+  return delta / max
+}
+
+/**
+ * Convertit RGB en HEX
+ */
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b]
+    .map(x => {
+      const hex = Math.round(x).toString(16)
+      return hex.length === 1 ? '0' + hex : hex
+    })
+    .join('')
+}
+
+/**
+ * Assombrit une couleur
+ */
+function darkenColor(r, g, b, factor) {
+  const newR = Math.max(0, Math.round(r * (1 - factor)))
+  const newG = Math.max(0, Math.round(g * (1 - factor)))
+  const newB = Math.max(0, Math.round(b * (1 - factor)))
+  return rgbToHex(newR, newG, newB)
+}
+
+/**
+ * Éclaircit une couleur
+ */
+function lightenColor(r, g, b, factor) {
+  const newR = Math.min(255, Math.round(r + (255 - r) * factor))
+  const newG = Math.min(255, Math.round(g + (255 - g) * factor))
+  const newB = Math.min(255, Math.round(b + (255 - b) * factor))
+  return rgbToHex(newR, newG, newB)
+}

@@ -1,5 +1,5 @@
 // fastorder-client/src/components/OrderTracker.jsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 import { APP_CONFIG } from '../config'
 import { Clock, Package, CheckCircle } from 'lucide-react'
@@ -7,37 +7,12 @@ import { Clock, Package, CheckCircle } from 'lucide-react'
 function OrderTracker({ userId }) {
   const [derniereCommande, setDerniereCommande] = useState(null)
   const [showNotif, setShowNotif] = useState(false)
+  const notifTimeoutRef = useRef(null)
 
-  useEffect(() => {
+  // Mémoriser fetchDerniereCommande avec useCallback
+  const fetchDerniereCommande = useCallback(async () => {
     if (!userId) return
-
-    // Charger la dernière commande
-    fetchDerniereCommande()
-
-    // S'abonner aux changements en temps réel
-    const channel = supabase
-      .channel('commandes_realtime')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'commandes',
-        filter: `user_id=eq.${userId}`
-      }, (payload) => {
-        console.log('🔔 Commande mise à jour:', payload.new)
-        setDerniereCommande(payload.new)
-        setShowNotif(true)
-        
-        // Masquer la notification après 5 secondes
-        setTimeout(() => setShowNotif(false), 5000)
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [userId])
-
-  const fetchDerniereCommande = async () => {
+    
     try {
       const { data } = await supabase
         .from('commandes')
@@ -50,13 +25,62 @@ function OrderTracker({ userId }) {
       if (data) {
         setDerniereCommande(data)
       }
-    } catch (error) {
+    } catch (err) {
       // Pas de commande encore
-      console.log('Aucune commande trouvée')
+      console.log('Aucune commande trouvée', err.message)
+    }
+  }, [userId])
+
+  // Fonction pour gérer la mise à jour de la commande
+  const handleCommandeUpdate = useCallback((newCommande) => {
+    console.log('🔔 Commande mise à jour:', newCommande)
+    
+    // Utiliser queueMicrotask pour sortir du contexte de l'effet
+    queueMicrotask(() => {
+      setDerniereCommande(newCommande)
+      setShowNotif(true)
+      
+      // Annuler le timeout précédent s'il existe
+      if (notifTimeoutRef.current) {
+        clearTimeout(notifTimeoutRef.current)
+      }
+      
+      // Masquer la notification après 5 secondes
+      notifTimeoutRef.current = setTimeout(() => {
+        setShowNotif(false)
+      }, 5000)
+    })
+  }, [])
+
+useEffect(() => {
+  if (!userId) return
+
+  // Appeler fetchDerniereCommande dans une fonction async locale
+  const loadCommande = async () => {
+    await fetchDerniereCommande()
+  }
+  loadCommande()
+
+  // S'abonner aux changements en temps réel
+  const channel = supabase
+    .channel('commandes_realtime')
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'commandes',
+      filter: `user_id=eq.${userId}`
+    }, (payload) => {
+      handleCommandeUpdate(payload.new)
+    })
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+    if (notifTimeoutRef.current) {
+      clearTimeout(notifTimeoutRef.current)
     }
   }
-
-  if (!derniereCommande || derniereCommande.statut === 'Terminée') return null
+}, [userId, fetchDerniereCommande, handleCommandeUpdate])
 
   const getStatutInfo = (statut) => {
     switch (statut) {
@@ -89,8 +113,8 @@ function OrderTracker({ userId }) {
     }
   }
 
-  const statutInfo = getStatutInfo(derniereCommande.statut)
-  if (!statutInfo) return null
+  const statutInfo = derniereCommande ? getStatutInfo(derniereCommande.statut) : null
+  if (!derniereCommande || !statutInfo || derniereCommande.statut === 'Terminée') return null
 
   return (
     <>

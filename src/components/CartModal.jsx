@@ -1,119 +1,87 @@
-import { X, Trash2, ShoppingBag } from 'lucide-react'
+// fastorder-client/src/components/CartModal.jsx
+import { X, Trash2, ShoppingCart } from 'lucide-react'
 import { APP_CONFIG } from '../config'
 
 function CartModal({ show, panier, onClose, onRemove, onOrder }) {
   if (!show) return null
 
-  const montantTotal = panier.reduce(
-    (sum, item) => sum + (item.plats.prix * item.quantite),
-    0
+  const montantTotal = panier.reduce((sum, item) => 
+    sum + (item.plats.prix * item.quantite), 0
   )
 
-  const handleRemove = (itemId, platNom) => {
-    if (window.confirm(`Retirer ${platNom} du panier ?`)) {
-      onRemove(itemId)
-    }
-  }
-
   return (
-    <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black bg-opacity-60 z-40 transition-opacity backdrop-blur-sm"
-        onClick={onClose}
-      ></div>
-
-      {/* Modal */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-gradient-to-b from-white to-gray-50 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col animate-slide-in">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="text-white p-6 flex justify-between items-center shadow-lg"
-          style={{ background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}, ${APP_CONFIG.theme.primaryHover})` }}
+        <div className="p-6 border-b flex justify-between items-center"
+          style={{ background: `linear-gradient(135deg, ${APP_CONFIG.theme.primary}, ${APP_CONFIG.theme.primaryHover})` }}
         >
-          <div>
-            <h2 className="text-2xl font-bold flex items-center gap-3">
-              <ShoppingBag size={28} />
-              <span>Mon Panier</span>
-            </h2>
-            <p className="text-sm mt-1 opacity-90">
-              {panier.length} article{panier.length > 1 ? 's' : ''}
-            </p>
+          <div className="flex items-center gap-3">
+            <ShoppingCart size={28} className="text-white" />
+            <div>
+              <h2 className="text-2xl font-bold text-white">Mon Panier</h2>
+              <p className="text-white/80 text-sm">
+                {panier.length} article{panier.length > 1 ? 's' : ''}
+              </p>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-full transition-all hover:rotate-90 duration-300"
+          <button 
+            onClick={onClose} 
+            className="text-white hover:bg-white/20 p-2 rounded-full transition"
           >
-            <X size={28} />
+            <X size={24} />
           </button>
         </div>
 
         {/* Contenu */}
         <div className="flex-1 overflow-y-auto p-6">
           {panier.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <div className="bg-gray-100 p-8 rounded-full mb-6">
-                <ShoppingBag size={80} className="text-gray-300" />
-              </div>
-              <p className="text-xl font-semibold mb-2">Votre panier est vide</p>
-              <p className="text-sm text-gray-400">Ajoutez des plats pour commander</p>
+            <div className="text-center py-12">
+              <ShoppingCart size={64} className="mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-600 text-lg">Votre panier est vide</p>
+              <button
+                onClick={onClose}
+                className="mt-6 px-6 py-3 rounded-xl font-semibold transition-all text-white"
+                style={{ backgroundColor: APP_CONFIG.theme.primary }}
+              >
+                Parcourir le menu
+              </button>
             </div>
           ) : (
             <div className="space-y-4">
               {panier.map(item => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-md hover:shadow-lg transition-shadow"
+                <div 
+                  key={item.id} 
+                  className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl hover:shadow-md transition-all"
                 >
-                  {/* Image */}
                   {item.plats.image_url && (
-                    <img
-                      src={item.plats.image_url}
+                    <img 
+                      src={item.plats.image_url} 
                       alt={item.plats.nom}
-                      className="w-24 h-24 object-cover rounded-xl shadow-md"
-                      onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
-                      }}
+                      className="w-20 h-20 rounded-lg object-cover"
                     />
                   )}
-
-                  {/* Détails */}
+                  
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-800 text-lg mb-1">
+                    <h3 className="font-bold text-lg text-gray-800">
                       {item.plats.nom}
                     </h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                      <span className="bg-gray-100 px-2 py-1 rounded-lg">
-                        {item.plats.prix.toLocaleString()} {APP_CONFIG.options.deviseMonnaie}
-                      </span>
-                      <span>×</span>
-                      <span className="font-semibold px-2 py-1 rounded-lg"
-                        style={{ 
-                          backgroundColor: `${APP_CONFIG.theme.primary}20`,
-                          color: APP_CONFIG.theme.primary
-                        }}
-                      >
-                        {item.quantite}
-                      </span>
-                    </div>
-                    <p className="font-bold text-lg"
-                      style={{ color: APP_CONFIG.theme.primary }}
-                    >
-                      {(item.plats.prix * item.quantite).toLocaleString()} {APP_CONFIG.options.deviseMonnaie}
+                    <p className="text-gray-600">
+                      {item.plats.prix.toLocaleString()} {APP_CONFIG.options.deviseMonnaie} × {item.quantite}
                     </p>
                   </div>
 
-                  {/* Bouton Supprimer */}
-                  <button
-                    onClick={() => handleRemove(item.id, item.plats.nom)}
-                    className="p-3 rounded-xl transition-all hover:scale-110"
-                    style={{ 
-                      color: APP_CONFIG.theme.danger,
-                      backgroundColor: `${APP_CONFIG.theme.danger}10`
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${APP_CONFIG.theme.danger}20`}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${APP_CONFIG.theme.danger}10`}
-                  >
-                    <Trash2 size={22} />
-                  </button>
+                  <div className="text-right">
+                    <p className="font-bold text-xl" style={{ color: APP_CONFIG.theme.primary }}>
+                      {(item.plats.prix * item.quantite).toLocaleString()} {APP_CONFIG.options.deviseMonnaie}
+                    </p>
+                    <button
+                      onClick={() => onRemove(item.id)}
+                      className="mt-2 text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-lg transition"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -122,35 +90,33 @@ function CartModal({ show, panier, onClose, onRemove, onOrder }) {
 
         {/* Footer */}
         {panier.length > 0 && (
-          <div className="border-t border-gray-200 bg-white p-6 space-y-4 shadow-lg">
-            {/* Total */}
-            <div className="p-4 rounded-xl"
-              style={{ 
-                background: `linear-gradient(to right, ${APP_CONFIG.theme.primary}15, ${APP_CONFIG.theme.primary}25)`
-              }}
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-semibold text-lg">Total</span>
-                <span className="text-3xl font-bold"
-                  style={{ color: APP_CONFIG.theme.primary }}
-                >
-                  {montantTotal.toLocaleString()} <span className="text-xl">{APP_CONFIG.options.deviseMonnaie}</span>
-                </span>
-              </div>
+          <div className="p-6 border-t bg-gray-50">
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-xl font-bold text-gray-800">Total</span>
+              <span className="text-3xl font-bold" style={{ color: APP_CONFIG.theme.primary }}>
+                {montantTotal.toLocaleString()} {APP_CONFIG.options.deviseMonnaie}
+              </span>
             </div>
-            
-            {/* Bouton Commander */}
-            <button
-              onClick={onOrder}
-              className="w-full text-white py-4 rounded-xl transition-all font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95"
-              style={{ background: `linear-gradient(to right, ${APP_CONFIG.theme.success}, ${APP_CONFIG.theme.successHover})` }}
-            >
-              Commander Maintenant
-            </button>
+
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 py-4 rounded-xl font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+              >
+                Continuer mes achats
+              </button>
+              <button
+                onClick={onOrder}
+                className="flex-2 py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl text-white"
+                style={{ backgroundColor: APP_CONFIG.theme.success, flex: 2 }}
+              >
+                Passer la commande →
+              </button>
+            </div>
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }
 

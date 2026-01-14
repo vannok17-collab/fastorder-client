@@ -2,11 +2,12 @@
 // fastorder-client/src/App.jsx
 import { useState, useEffect } from 'react'
 import { APP_CONFIG } from './config' 
-import { useTheme } from './hooks/useTheme' // ✨ Import du hook
+import { useTheme } from './hooks/useTheme'
 import { supabase } from './supabaseClient'
 import { ShoppingCart } from 'lucide-react'
 import MenuDisplay from './components/MenuDisplay'
 import CartModal from './components/CartModal'
+import CheckoutModal from './components/CheckoutModal'
 import OrderTracker from './components/OrderTracker'
 import './App.css'
 
@@ -15,11 +16,11 @@ function App() {
   const [panier, setPanier] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCart, setShowCart] = useState(false)
+  const [showCheckout, setShowCheckout] = useState(false)
   const [message, setMessage] = useState(null)
   const [userId, setUserId] = useState('')
   const [numeroTable, setNumeroTable] = useState(null)
   
-  // ✨ Utilisation du hook useTheme
   const { theme, loading: themeLoading, ready: themeReady } = useTheme()
 
   useEffect(() => {
@@ -48,6 +49,49 @@ function App() {
   useEffect(() => {
     if (userId && themeReady) {
       fetchPanier()
+    }
+  }, [userId, themeReady])
+
+  // ✨ Realtime pour le menu
+  useEffect(() => {
+    if (!themeReady) return
+
+    const menuChannel = supabase
+      .channel('plats_realtime_client')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'plats'
+      }, () => {
+        console.log('🔄 Menu mis à jour')
+        fetchMenu()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(menuChannel)
+    }
+  }, [themeReady])
+
+  // ✨ Realtime pour le panier
+  useEffect(() => {
+    if (!userId || !themeReady) return
+
+    const panierChannel = supabase
+      .channel('panier_realtime_client')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'panier_items',
+        filter: `user_id=eq.${userId}`
+      }, () => {
+        console.log('🔄 Panier mis à jour')
+        fetchPanier()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(panierChannel)
     }
   }, [userId, themeReady])
 
@@ -139,7 +183,7 @@ function App() {
     }
   }
 
-  const passerCommande = async () => {
+  const handleCheckout = () => {
     if (panier.length === 0) return
 
     if (!numeroTable) {
@@ -147,6 +191,11 @@ function App() {
       return
     }
 
+    setShowCart(false)
+    setShowCheckout(true)
+  }
+
+  const passerCommande = async ({ contact, mode_paiement }) => {
     try {
       const montantTotal = panier.reduce((sum, item) => 
         sum + (item.plats.prix * item.quantite), 0
@@ -158,7 +207,9 @@ function App() {
           user_id: userId,
           numero_table: numeroTable,
           montant_total: montantTotal,
-          statut: 'En attente'
+          statut: 'En attente',
+          contact: contact,
+          mode_paiement: mode_paiement
         })
         .select()
         .single()
@@ -186,11 +237,11 @@ function App() {
       if (deleteError) throw deleteError
 
       await fetchPanier()
-      setShowCart(false)
-      showMessage(`Commande passée avec succès - Table ${numeroTable}`, 'success')
+      showMessage(`Commande passée avec succès !`, 'success')
     } catch (error) {
       console.error('Erreur commande:', error)
       showMessage('Erreur lors de la commande', 'error')
+      throw error
     }
   }
 
@@ -201,12 +252,10 @@ function App() {
 
   const cartCount = panier.reduce((sum, item) => sum + item.quantite, 0)
 
-  // ✨ Écran de chargement du thème amélioré
   if (themeLoading || !themeReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50">
         <div className="text-center">
-          {/* Animation de chargement avec les couleurs du logo */}
           <div className="relative mb-8">
             <div className="animate-spin rounded-full h-20 w-20 border-4 border-gray-200 border-t-orange-500 mx-auto"></div>
             {APP_CONFIG.restaurant.logo && (
@@ -230,7 +279,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header avec couleurs dynamiques */}
+      {/* Header */}
       <header className="shadow-sm sticky top-0 z-40 transition-colors"
         style={{ backgroundColor: theme.primary }}
       >
@@ -272,7 +321,7 @@ function App() {
         </div>
       </header>
 
-      {/* Notifications avec couleurs dynamiques */}
+      {/* Notifications */}
       {message && (
         <div className={`fixed top-20 right-4 left-4 md:left-auto md:right-4 z-50 px-6 py-4 rounded-xl shadow-2xl animate-fade-in text-white font-semibold text-center md:text-left max-w-md`}
           style={{
@@ -285,13 +334,53 @@ function App() {
         </div>
       )}
 
-      {/* Menu */}
-      <main className="max-w-7xl mx-auto px-4 py-6 pb-24">
-        <MenuDisplay 
-          plats={plats} 
-          loading={loading} 
-          onAddToCart={addToCart}
-        />
+      {/* Contenu principal */}
+      <main className="max-w-7xl mx-auto px-4 py-8 pb-32">
+        {/* Message de bienvenue */}
+        <div className="mb-8 bg-gradient-to-r rounded-3xl shadow-xl p-8 border-l-8 transform hover:scale-[1.02] transition-all"
+          style={{ 
+            background: `linear-gradient(135deg, ${theme.primaryBg} 0%, white 100%)`,
+            borderColor: theme.primary
+          }}
+        >
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-4xl"
+              style={{ backgroundColor: `${theme.primary}20` }}
+            >
+              👋
+            </div>
+            <div>
+              <h2 className="text-4xl font-bold mb-2" style={{ color: theme.primary }}>
+                Bienvenue chez {APP_CONFIG.restaurant.nom} !
+              </h2>
+              <p className="text-xl text-gray-700 font-semibold">
+                {APP_CONFIG.restaurant.slogan}
+              </p>
+            </div>
+          </div>
+          <p className="text-gray-600 text-lg">
+            📱 Commandez directement depuis votre table {numeroTable && `n°${numeroTable}`}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <span className="px-4 py-2 rounded-full text-sm font-semibold"
+              style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
+            >
+              ✓ Menu en temps réel
+            </span>
+            <span className="px-4 py-2 rounded-full text-sm font-semibold"
+              style={{ backgroundColor: `${theme.info}20`, color: theme.info }}
+            >
+              ✓ Commande rapide
+            </span>
+            <span className="px-4 py-2 rounded-full text-sm font-semibold"
+              style={{ backgroundColor: `${theme.accent}20`, color: theme.primary }}
+            >
+              ✓ Paiement mobile
+            </span>
+          </div>
+        </div>
+
+        <MenuDisplay plats={plats} loading={loading} onAddToCart={addToCart} />
       </main>
 
       {/* Modal Panier */}
@@ -300,8 +389,18 @@ function App() {
         panier={panier}
         onClose={() => setShowCart(false)}
         onRemove={removeFromCart}
-        onOrder={passerCommande}
+        onOrder={handleCheckout}
       />
+
+      {/* Modal Checkout */}
+      {showCheckout && (
+        <CheckoutModal
+          panier={panier}
+          numeroTable={numeroTable}
+          onClose={() => setShowCheckout(false)}
+          onConfirm={passerCommande}
+        />
+      )}
 
       {/* Tracker de commande en temps réel */}
       <OrderTracker userId={userId} />

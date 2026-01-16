@@ -271,9 +271,6 @@ function App() {
           <p className="text-gray-700 font-bold text-lg mb-2">
             {APP_CONFIG.restaurant.nom}
           </p>
-          <p className="text-gray-500 text-sm">
-            🎨 Chargement du thème personnalisé...
-          </p>
         </div>
       </div>
     )

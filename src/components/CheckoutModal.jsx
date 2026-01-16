@@ -114,6 +114,13 @@ function CheckoutModal({ panier, numeroTable, onClose, onConfirm }) {
           {/* Étape 1 : Contact */}
           {step === 1 && (
             <div className="space-y-6">
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <p className="text-blue-800 font-semibold flex items-center gap-2">
+                  <Mail size={20} />
+                  Pour recevoir votre facture et suivre votre commande
+                </p>
+              </div>
+
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
                   Email ou Téléphone *

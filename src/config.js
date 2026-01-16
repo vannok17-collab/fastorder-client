@@ -7,9 +7,9 @@ import { extractColorsFromLogo } from './utils/colorExtractor'
 
 export const APP_CONFIG = {
   restaurant: {
-    nom: "Dabali Xpress",
-    slogan: "A l'ivoirienne",
-    logo: "https://dabalixpress-ci.com/assets/img/logo.jpg",
+    nom: "KFC",
+    slogan: "Bon à s’en lécher les doigts",
+    logo: "https://th.bing.com/th/id/OIP.ReIBeMMEQ3Kojkzi8GuZPAHaHa?w=200&h=200&c=10&o=6&pid=genserp&rm=2",
   },
 
   // Couleurs par défaut (remplacées automatiquement par l'extraction)

@@ -9,6 +9,7 @@ import MenuDisplay from './components/MenuDisplay'
 import CartModal from './components/CartModal'
 import CheckoutModal from './components/CheckoutModal'
 import OrderTracker from './components/OrderTracker'
+import InvoiceView from './components/InvoiceView'
 import './App.css'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
   const [message, setMessage] = useState(null)
   const [userId, setUserId] = useState('')
   const [numeroTable, setNumeroTable] = useState(null)
+  const [activeTab, setActiveTab] = useState('menu') // 'menu' ou 'factures'
   
   const { theme, loading: themeLoading, ready: themeReady } = useTheme()
 
@@ -283,41 +285,65 @@ function App() {
       <header className="shadow-sm sticky top-0 z-40 transition-colors"
         style={{ backgroundColor: theme.primary }}
       >
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4">
-          <div className="flex items-center gap-3 flex-1">
-            {APP_CONFIG.restaurant.logo && (
-              <img 
-                src={APP_CONFIG.restaurant.logo} 
-                alt={APP_CONFIG.restaurant.nom}
-                className="w-12 h-12 rounded-full object-cover shadow-lg ring-2 ring-white"
-              />
-            )}
-            <div>
-              <h1 className="text-2xl font-bold" style={{ color: theme.text.light }}>
-                {APP_CONFIG.restaurant.nom}
-              </h1>
-              {numeroTable && (
-                <p className="text-sm opacity-90" style={{ color: theme.text.light }}>
-                  Table {numeroTable}
-                </p>
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex justify-between items-center gap-4 mb-3">
+            <div className="flex items-center gap-3 flex-1">
+              {APP_CONFIG.restaurant.logo && (
+                <img 
+                  src={APP_CONFIG.restaurant.logo} 
+                  alt={APP_CONFIG.restaurant.nom}
+                  className="w-12 h-12 rounded-full object-cover shadow-lg ring-2 ring-white"
+                />
               )}
+              <div>
+                <h1 className="text-2xl font-bold" style={{ color: theme.text.light }}>
+                  {APP_CONFIG.restaurant.nom}
+                </h1>
+                {numeroTable && (
+                  <p className="text-sm opacity-90" style={{ color: theme.text.light }}>
+                    Table {numeroTable}
+                  </p>
+                )}
+              </div>
             </div>
+            
+            <button
+              onClick={() => setShowCart(true)}
+              className="relative p-3 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-110"
+              style={{ backgroundColor: theme.accent }}
+            >
+              <ShoppingCart size={24} style={{ color: theme.text.primary }} />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse"
+                  style={{ backgroundColor: theme.danger }}
+                >
+                  {cartCount}
+                </span>
+              )}
+            </button>
           </div>
-          
-          <button
-            onClick={() => setShowCart(true)}
-            className="relative p-3 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-110"
-            style={{ backgroundColor: theme.accent }}
-          >
-            <ShoppingCart size={24} style={{ color: theme.text.primary }} />
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse"
-                style={{ backgroundColor: theme.danger }}
-              >
-                {cartCount}
-              </span>
-            )}
-          </button>
+
+          {/* Navigation Tabs */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('menu')}
+              className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+                activeTab === 'menu' ? 'bg-white shadow-lg' : 'bg-white/20 hover:bg-white/30'
+              }`}
+              style={{ color: activeTab === 'menu' ? theme.primary : theme.text.light }}
+            >
+              🍽️ Menu
+            </button>
+            <button
+              onClick={() => setActiveTab('factures')}
+              className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+                activeTab === 'factures' ? 'bg-white shadow-lg' : 'bg-white/20 hover:bg-white/30'
+              }`}
+              style={{ color: activeTab === 'factures' ? theme.primary : theme.text.light }}
+            >
+              📄 Factures
+            </button>
+          </div>
         </div>
       </header>
 
@@ -336,51 +362,57 @@ function App() {
 
       {/* Contenu principal */}
       <main className="max-w-7xl mx-auto px-4 py-8 pb-32">
-        {/* Message de bienvenue */}
-        <div className="mb-8 bg-gradient-to-r rounded-3xl shadow-xl p-8 border-l-8 transform hover:scale-[1.02] transition-all"
-          style={{ 
-            background: `linear-gradient(135deg, ${theme.primaryBg} 0%, white 100%)`,
-            borderColor: theme.primary
-          }}
-        >
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-4xl"
-              style={{ backgroundColor: `${theme.primary}20` }}
+        {activeTab === 'menu' ? (
+          <>
+            {/* Message de bienvenue */}
+            <div className="mb-8 bg-gradient-to-r rounded-3xl shadow-xl p-8 border-l-8 transform hover:scale-[1.02] transition-all"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.primaryBg} 0%, white 100%)`,
+                borderColor: theme.primary
+              }}
             >
-              👋
-            </div>
-            <div>
-              <h2 className="text-4xl font-bold mb-2" style={{ color: theme.primary }}>
-                Bienvenue chez {APP_CONFIG.restaurant.nom} !
-              </h2>
-              <p className="text-xl text-gray-700 font-semibold">
-                {APP_CONFIG.restaurant.slogan}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center text-4xl"
+                  style={{ backgroundColor: `${theme.primary}20` }}
+                >
+                  👋
+                </div>
+                <div>
+                  <h2 className="text-4xl font-bold mb-2" style={{ color: theme.primary }}>
+                    Bienvenue chez {APP_CONFIG.restaurant.nom} !
+                  </h2>
+                  <p className="text-xl text-gray-700 font-semibold">
+                    {APP_CONFIG.restaurant.slogan}
+                  </p>
+                </div>
+              </div>
+              <p className="text-gray-600 text-lg">
+                📱 Commandez directement depuis votre table {numeroTable && `n°${numeroTable}`}
               </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <span className="px-4 py-2 rounded-full text-sm font-semibold"
+                  style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
+                >
+                  ✓ Menu en temps réel
+                </span>
+                <span className="px-4 py-2 rounded-full text-sm font-semibold"
+                  style={{ backgroundColor: `${theme.info}20`, color: theme.info }}
+                >
+                  ✓ Commande rapide
+                </span>
+                <span className="px-4 py-2 rounded-full text-sm font-semibold"
+                  style={{ backgroundColor: `${theme.accent}20`, color: theme.primary }}
+                >
+                  ✓ Paiement mobile
+                </span>
+              </div>
             </div>
-          </div>
-          <p className="text-gray-600 text-lg">
-            📱 Commandez directement depuis votre table {numeroTable && `n°${numeroTable}`}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <span className="px-4 py-2 rounded-full text-sm font-semibold"
-              style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
-            >
-              ✓ Menu en temps réel
-            </span>
-            <span className="px-4 py-2 rounded-full text-sm font-semibold"
-              style={{ backgroundColor: `${theme.info}20`, color: theme.info }}
-            >
-              ✓ Commande rapide
-            </span>
-            <span className="px-4 py-2 rounded-full text-sm font-semibold"
-              style={{ backgroundColor: `${theme.accent}20`, color: theme.primary }}
-            >
-              ✓ Paiement mobile
-            </span>
-          </div>
-        </div>
 
-        <MenuDisplay plats={plats} loading={loading} onAddToCart={addToCart} />
+            <MenuDisplay plats={plats} loading={loading} onAddToCart={addToCart} />
+          </>
+        ) : (
+          <InvoiceView userId={userId} />
+        )}
       </main>
 
       {/* Modal Panier */}
